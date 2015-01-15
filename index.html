@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Demo for jPeaDF</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type="text/javascript" src="js/jquery.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/Deflate/adler32cs.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/FileSaver.js/FileSaver.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/Blob.js/BlobBuilder.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.addimage.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.standard_fonts_metrics.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.split_text_to_size.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.from_html.js"></script>
+        <script type="text/javascript" src="js/jsPDF/table.js"></script>
+
+        <script type="text/javascript" src="js/src/jPeaDF.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFbLOCK.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFTable.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFMath.js"></script>
+
+    </head>
+    <body>
+        <script>
+            $(function() {
+                var pdf = new jPeaDF();
+
+                var d = [];
+                for (var i = 0; i < 120; i++) {
+                    d.push([{value: '1adsda'}, {value: i, style: {valign: 't', style: 'bold', color: [200, 150, 0]}}, {value: '3a'}, {value: '4a', style: {valign: 'b', halign: 'r'}}, {value: '5a', style: {halign: 'r', fill: [255, 0, 0]}}]);
+                }
+
+//                var toptions = {
+//                    id: 'Table_1',
+//                    width: '100%',
+//                    font_size: 8,
+//                    header_height: 30,
+//                    row_height: 16,
+//                    cell_padding: 2,
+//                    floating: false,
+//                    footers: null,
+//                    margin_left: 0,
+//                    margin_right: 0,
+//                    margin_top: 0,
+//                    margin_bottom: 0,
+//                }
+
+                var toptions={};
+                var theaders = [{value: "1", width: 50}, {value: "2", width: 50}, {value: "3"}, {value: "4"}, {value: "5", width: '10%'}]
+                
+                var table_block = new jPeaDFBlock({id: 'Block_1', width: '50%', margin_left: '50%', padding_left: '0%', padding_right: '0%', padding_top: '0%', padding_bottom: '0%', fill_color: [0, 0, 0]});
+                table_block.addItem(new jPeaDFTable(theaders, d, toptions));
+                var black_block = new jPeaDFBlock({floating: false, id: 'Black block', width: '50%', height: 100, fill_color: [0, 0, 0]});
+                var red_block = new jPeaDFBlock({floating: true, id: 'Black block2', margin_left: '50%', width: '50%', height: 100, fill_color: [100, 0, 0]});
+                
+                for (var i = 0; i < 7; i++) {
+                    var bb = new jPeaDFBlock({floating: (Math.random()>0.5), id: 'Rand_block '+i, width: '50%', height: 100, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    pdf.addBlock(bb);
+                }
+                pdf.addBlock(table_block);
+                pdf.addBlock(black_block);
+                pdf.addBlock(red_block);
+                for (var i = 0; i < 20; i++) {
+                    var bb = new jPeaDFBlock({floating: (Math.random()>0.5), id: 'Rand_block '+i, width: '50%', height: 100, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    pdf.addBlock(bb);
+                }
+                pdf.draw();
+                pdf.outputNewTab();
+            });
+
+
+
+
+        </script>
+
+
+
+        <button onclick="createPDF();">Create PDF</button>
+    </body>
+</html>
