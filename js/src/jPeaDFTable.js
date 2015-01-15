@@ -1,7 +1,7 @@
 var jPeaDFTable = function(h, t, options) {
     this.data = t;
     this.headers = h;
-    this.debug = {creation: true};
+    this.debug = {creation: false};
     //this.debug = false;
     this.parent = null;
     this.pdf_obj = null;
@@ -52,7 +52,7 @@ jPeaDFTable.prototype.setParent = function(p) {
 }
 
 
-jPeaDFTable.prototype.drawTable = function() {
+jPeaDFTable.prototype.drawItems = function() {
     window.console.log('#' + this.options.id + ' Drawing table at ' + this.posXStart + '  [ ' + this.options.width + ' , ' + this.options.width + ']');
     // the main settongs for the 
     var obj = this.pdf_obj;
@@ -71,7 +71,9 @@ jPeaDFTable.prototype.drawTable = function() {
     var tableRowHeight = this.options.row_height;
     var temp_ypos = 0;
     var temp_page = 0;
-
+    
+    
+    obj.ypos = obj.ypos+this.options.margin_top;
     if (this.options.floating) {
         temp_ypos = obj.ypos;
         temp_page = obj.doc.getPage();
@@ -132,16 +134,16 @@ jPeaDFTable.prototype.drawTable = function() {
             obj.setLineColor(v.style.line_color, tableCellLine);
             obj.setColor(v.style.color, tableFontColor);
             obj.setStyle(v.style.style);
-            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value) * scaledFontSize, v.style.halign, 'c', 0, v.style.padding || tableCellPad);
-            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, v.style.valign, 'm', scaledFontSize, v.style.padding || tableCellPad);
+            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value.toString()) * scaledFontSize, v.style.halign, 'c', 0, v.style.padding?[v.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
+            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, v.style.valign, 'm', scaledFontSize, v.style.padding?[v.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
         } else {
             obj.setLineWidth(null, tableLineWidth);
             obj.setFill(null, tableCellHeaderFill);
             obj.setLineColor(null, tableCellLine);
             obj.setColor(null, tableFontColor);
             obj.setStyle(null);
-            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value) * scaledFontSize, null, 'c', 0, tableCellPad);
-            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, null, 'm', scaledFontSize, tableCellPad);
+            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value.toString()) * scaledFontSize, null, 'c', 0, [tableCellPad,tableCellPad]);
+            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, null, 'm', scaledFontSize, [tableCellPad,tableCellPad]);
         }
         obj.doc.rect(posXStart + tablePosX, obj.ypos, tableColWidths[k], tableHeaderHeight, 'FD');
         obj.doc.text(posXStart + tablePosX + temp_xoffset, obj.ypos + temp_yoffset, v.value.toString());
@@ -169,16 +171,16 @@ jPeaDFTable.prototype.drawTable = function() {
                 obj.setLineColor(vcell.style.line_color, tableCellLine);
                 obj.setColor(vcell.style.color, tableFontColor);
                 obj.setStyle(vcell.style.style);
-                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, vcell.style.halign, 'l', 0, vcell.style.padding || tableCellPad);
-                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, vcell.style.valign, 'm', scaledFontSize, vcell.style.padding || tableCellPad);
+                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, vcell.style.halign, 'l', 0, vcell.style.padding?[vcell.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
+                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, vcell.style.valign, 'm', scaledFontSize, vcell.style.padding?[vcell.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
             } else {
                 obj.setLineWidth(null, tableLineWidth);
                 obj.setFill(null, tableCellRowFill);
                 obj.setColor(null, tableFontColor);
                 obj.setLineColor(null, tableCellLine);
                 obj.setStyle(null);
-                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, null, 'l', 0, tableCellPad);
-                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, null, 'm', scaledFontSize, tableCellPad);
+                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, null, 'l', 0, [tableCellPad,tableCellPad]);
+                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, null, 'm', scaledFontSize, [tableCellPad,tableCellPad]);
             }
 
             obj.doc.rect(posXStart + tablePosX, obj.ypos, colw, tableRowHeight, 'FD');
@@ -197,4 +199,6 @@ jPeaDFTable.prototype.drawTable = function() {
         obj.ypos = temp_ypos;
         obj.doc.goToPage(temp_page);
     }
+    // revert to standard font!
+    this.pdf_obj.doc.setFontSize(this.pdf_obj.options.font_size);
 };

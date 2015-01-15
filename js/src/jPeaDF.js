@@ -1,12 +1,17 @@
 var jPeaDF = function(options) {
     // the default variables
 
-    this.debug = {creation: true};
+    this.debug = {creation: false};
     //this.debug = false;
     this.options = {};
 
-    this.options.font_size = (options && options.font_size) || 18;
-    this.options.line_height = (options && options.line_height) || 10;
+    this.options.h1 = (options && options.h1) || {size: 18};
+    this.options.h2 = (options && options.h2) || {size: 18};
+    this.options.h3 = (options && options.h3) || {size: 18};
+    this.options.h4 = (options && options.h4) || {size: 18};
+
+    this.options.font_size = (options && options.font_size) || 12;
+    this.options.line_height = (options && options.line_height) || 12;
     this.options.page_size = (options && options.page_size) || 'a4';// page size defaul
     this.options.units = (options && options.unit) || 'pt';// defaultunit
     this.options.orientation = (options && options.orientation) || 'p';// default orientation
@@ -48,7 +53,7 @@ var jPeaDF = function(options) {
 };
 
 // function for adding a block
-jPeaDF.prototype.addBlock = function(b) {
+jPeaDF.prototype.addItem = function(b) {
     b.setPdfObj(this);
     b.setParent(this);
     this.blocks.push(b);
@@ -56,11 +61,10 @@ jPeaDF.prototype.addBlock = function(b) {
 
 // recursive call calls each drawItems in the objects
 jPeaDF.prototype.draw = function() {
-
     for (var i = 0; i < this.blocks.length; i++) {
         var v = this.blocks[i];
         // calulate widths of all blocks at this level based on the parent!
-        if (v instanceof jPeaDFBlock) {
+        if (v) {
             var temp_ypos = 0;
             var temp_page = 0;
 
@@ -105,11 +109,18 @@ jPeaDF.prototype.draw = function() {
 
                 window.console.log('-----------------------------------');
             }
-
             v.drawItems();
             // floating block or non floating
-            //window.console.log(' after table '+this.block_ypos +'  '+this.block_ypage );
-            this.ypos = v.block_ypos;
+            // update current position
+
+            
+            if (v.block_ypage > this.doc.getPage()) {
+                this.doc.goToPage(v.block_ypage);
+                this.ypos = v.block_ypos;
+            } else if (v.block_ypage == this.doc.getPage() && v.block_ypos > this.ypos) {
+                this.ypos = v.block_ypos;
+            }
+
             //this.block_ypage = v.block_ypage;
             if (v.options.floating) {
                 this.ypos = temp_ypos;
@@ -153,15 +164,16 @@ jPeaDF.prototype.goToNextPage = function() {
 }
 
 jPeaDF.prototype.getOffsetX = function(outer, inner, align, defaulta, addition, padding) {
+    // if padding is an array its always lrtb
     if (!align) {
         align = defaulta;
     }
     if (align == 'c') {
-        return (outer - (2 * padding) - inner) / 2 + addition + padding;
+        return (outer - (padding[0] + padding[1]) - inner) / 2 + addition + padding[0];
     } else if (align == 'r') {
-        return (outer - (2 * padding) - inner) + addition + padding;
+        return (outer - (padding[0] + padding[1]) - inner) + addition + padding[0];
     } else if (align == 'l') {
-        return 0 + addition + padding;
+        return 0 + addition + padding[0];
     }
     return addition + padding;
 }
@@ -171,13 +183,13 @@ jPeaDF.prototype.getOffsetY = function(outer, inner, align, defaulta, addition, 
         align = defaulta;
     }
     if (align == 'm') {
-        return (outer - (2 * padding) - inner) / 2 + addition + padding;
+        return (outer - (padding[0] + padding[1]) - inner) / 2 + addition + padding[0];
     } else if (align == 'b') {
-        return (outer - (2 * padding) - inner) + addition + padding;
+        return (outer - (padding[0] + padding[1]) - inner) + addition + padding[0];
     } else if (align == 't') {
-        return 0 + addition + padding;
+        return 0 + addition + padding[0];
     }
-    return addition;
+    return addition + padding;
 }
 
 jPeaDF.prototype.setColor = function(a, defaulta) {

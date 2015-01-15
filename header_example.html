@@ -24,54 +24,50 @@ and open the template in the editor.
         <script type="text/javascript" src="js/src/jPeaDFbLOCK.js"></script>
         <script type="text/javascript" src="js/src/jPeaDFTable.js"></script>
         <script type="text/javascript" src="js/src/jPeaDFMath.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFHeader.js"></script>
 
     </head>
     <body>
         <script>
             $(function() {
                 var pdf = new jPeaDF();
-
-                var d = [];
-                for (var i = 0; i < 120; i++) {
+                
+                 var d = [];
+                for (var i = 0; i < 5; i++) {
                     d.push([{value: '1adsda'}, {value: i, style: {valign: 't', style: 'bold', color: [200, 150, 0]}}, {value: '3a'}, {value: '4a', style: {valign: 'b', halign: 'r'}}, {value: '5a', style: {halign: 'r', fill: [255, 0, 0]}}]);
                 }
-
-//                var toptions = {
-//                    id: 'Table_1',
-//                    width: '100%',
-//                    font_size: 8,
-//                    header_height: 30,
-//                    row_height: 16,
-//                    cell_padding: 2,
-//                    floating: false,
-//                    footers: null,
-//                    margin_left: 0,
-//                    margin_right: 0,
-//                    margin_top: 0,
-//                    margin_bottom: 0,
-//                }
-
                 var toptions={margin_top: 50};
                 var theaders = [{value: "1", width: 50}, {value: "2", width: 50}, {value: "3"}, {value: "4"}, {value: "5", width: '10%'}]
                 
-                var table_block = new jPeaDFBlock({id: 'Block_1', width: '50%', margin_left: '50%', padding_left: '0%',fill_color: [0, 0, 50], padding_right: '0%', padding_top: '0%', padding_bottom: '0%', fill_color: [0, 0, 0]});
-                table_block.addItem(new jPeaDFTable(theaders, d, toptions));
-                var black_block = new jPeaDFBlock({floating: false, id: 'Black block', width: '50%', height: 100, fill_color: [0, 0, 0]});
-                var red_block = new jPeaDFBlock({floating: true, id: 'Black block2', margin_left: '50%', width: '50%', height: 100, fill_color: [100, 0, 0]});
                 
-                for (var i = 0; i < 7; i++) {
-                    var bb = new jPeaDFBlock({floating: (Math.random()>0.5), id: 'Rand_block '+i, width: '50%', height: 100, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-                    pdf.addItem(bb);
-                }
                 
-                pdf.addItem(new jPeaDFTable(theaders, d, toptions));
-                pdf.addItem(black_block);
-                pdf.addItem(red_block);
+                pdf.addItem(new jPeaDFHeader('My header', {height: 100, font_color: [220, 220, 220], fill_color: [100, 60, 120], padding_right: 30}));
+                // Add random blocks!
                 for (var i = 0; i < 20; i++) {
-                    var bb = new jPeaDFBlock({floating: (Math.random()>0.5), id: 'Rand_block '+i, width: '50%', height: 100, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    var bb = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, width: '50%', height: 75, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    bb.addItem(new jPeaDFHeader('My sub ', {type: 'h4', height: 20, halign: 'r', valign: 'm', margin_top: 5, margin_left: '5%', width: '90%', font_color: [220, 220, 220], fill_color: [0, 0, 0, 50]}));
+                    bb.addItem(new jPeaDFHeader('My sub 2', {type: 'h4', height: 40, halign: 'r', valign: 'm', margin_top: 5, margin_left: '10%', width: '80%', font_color: [220, 220, 220], fill_color: [10, 100, 0, 50]}));
+                    bb.addItem(new jPeaDFHeader('My sub 2', {type: 'h4', height: 40, halign: 'r', valign: 'm', margin_top: 5, margin_left: '10%', width: '80%', font_color: [220, 220, 220], fill_color: [10, 100, 0, 50]}));
                     pdf.addItem(bb);
+                    var bb2 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left:'50%', width: '50%', height: 200, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+
+                    bb2.addItem(new jPeaDFTable(theaders, d, toptions));
+                    pdf.addItem(bb2);
+                    
+                    //if (Math.random() > 0.5) {
+                        var r = Math.random();
+                        var ht = 'h1';
+                        if (r > .75) {
+                            ht = 'h4';
+                        } else if (r > .5) {
+                            ht = 'h3';
+                        } else if (r > 0.25) {
+                            ht = 'h2';
+                        }
+
+                        //pdf.addItem(new jPeaDFHeader('My header ' + i + ' ' + ht, {type: ht, height: 50, halign: 'r', valign: 'm', margin_top: 20, font_color: [220, 220, 220], fill_color: [100, 60, 120]}));
+                    //}
                 }
-                pdf.addItem(table_block);
                 pdf.draw();
                 pdf.outputNewTab();
             });

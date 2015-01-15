@@ -1,5 +1,5 @@
 var jPeaDFBlock = function(options) {
-    this.debug = {creation: true};
+    this.debug = {creation: false};
     //this.debug = false;
     this.pdf_obj = null;
     this.parent = null;
@@ -8,6 +8,7 @@ var jPeaDFBlock = function(options) {
     this.blocks = [];
     this.block_ypos = 0;
     this.block_ypage = 0;
+
     this.options = {};
 
     // the block options
@@ -29,7 +30,7 @@ var jPeaDFBlock = function(options) {
     this.options.margin_bottom = (options && options.margin_bottom) || 0;
 
     if (this.debug && this.debug.creation) {
-        window.console.log('Creating jPeaDFTable-----------');
+        window.console.log('Creating jPeaDFBlock-----------');
         window.console.log('Options:');
         window.console.log(this.options);
         window.console.log('Id: ' + this.options.id);
@@ -61,6 +62,9 @@ jPeaDFBlock.prototype.setPdfObj = function(obj) {
 
 // recursive
 jPeaDFBlock.prototype.drawItems = function() {
+    // add the margin top
+    this.pdf_obj.ypos = this.pdf_obj.ypos + this.options.margin_top;
+
     var temp_ypos = 0;
     var temp_page = 0;
     if (this.options.floating) {
@@ -69,13 +73,13 @@ jPeaDFBlock.prototype.drawItems = function() {
     }
     // if block will flow to next page!
     //
-    window.console.log('Height initial '+this.options.heightInitial);
+    window.console.log('Height initial ' + this.options.heightInitial);
     if (this.pdf_obj.ypos + this.options.height > this.pdf_obj.options.height - this.pdf_obj.options.padding_bottom) {
         this.pdf_obj.goToNextPage();
         this.pdf_obj.ypos = this.pdf_obj.options.padding_top;
     }
 
-    window.console.log('#' + this.options.id + ' Drawing block at ' + this.posXStart + '  [ ' + this.options.width + ' , ' + this.options.height + ']');
+    window.console.log('#' + this.options.id + ' Drawing block at ' + this.posXStart + ' , '+ this.pdf_obj.ypos + '  [ ' + this.options.width + ' , ' + this.options.height + ']');
     if (this.options.fill_color) {
         this.pdf_obj.setFill(null, this.options.fill_color);
         this.pdf_obj.doc.rect(this.posXStart, this.pdf_obj.ypos, this.options.width, this.options.height, 'F');
@@ -87,8 +91,10 @@ jPeaDFBlock.prototype.drawItems = function() {
     }
     this.block_ypos = this.pdf_obj.ypos + this.options.height;
 
+
     // draw the block!
     for (var i = 0; i < this.blocks.length; i++) {
+
         var v = this.blocks[i];
         v.options.padding_left = this.pdf_obj.getSizeByPercentage(v.options.padding_left, v.options.width, 0);
         v.options.padding_right = this.pdf_obj.getSizeByPercentage(v.options.padding_right, v.options.width, 0);
@@ -116,6 +122,8 @@ jPeaDFBlock.prototype.drawItems = function() {
         v.options.margin_left = this.pdf_obj.getSizeByPercentage(v.options.margin_left, this.options.width, this.options.padding_left + this.options.padding_right);// works out width BEFORE the padding
         v.posXStart = this.posXStart + v.options.margin_left;
         v.posYStart = this.posYStart + v.options.margin_top;
+       
+
         if (this.pdf_obj.debug) {
             window.console.log('#' + v.options.id + '  New Margin Child Left Margin: ' + v.options.margin_left);
             window.console.log('#' + v.options.id + '  Parent Start x: ' + this.posXStart);
@@ -126,20 +134,22 @@ jPeaDFBlock.prototype.drawItems = function() {
         }
 
 
-        if (v instanceof jPeaDFTable) {
-            v.drawTable(v.table);
-            window.console.log(' PDF Table page: ' + v.block_ypage);
-            // get the highest position for this block
+        if (v instanceof jPeaDFBlock) {
+            this.pdf_obj.ypos = this.block_ypos;
+            this.pdf_obj.doc.goToPage(this.block_ypage);
+            v.drawItems();
+            //this.block_ypos = this.pdf_obj.ypos;
+            this.block_ypage = this.pdf_obj.doc.getPage();
             if (v.block_ypage > this.block_ypage) {
                 this.block_ypage = v.block_ypage;
                 this.block_ypos = v.block_ypos;
             } else if (v.block_ypage == this.block_ypage && v.block_ypos > this.block_ypos) {
                 this.block_ypos = v.block_ypos;
             }
-        } else if (v instanceof jPeaDFBlock) {
-            this.pdf_obj.ypos = this.block_ypos;
-            this.pdf_obj.doc.goToPage(this.block_ypage);
+        } else if (v) {
             v.drawItems();
+
+            this.block_ypage = this.pdf_obj.doc.getPage();
             if (v.block_ypage > this.block_ypage) {
                 this.block_ypage = v.block_ypage;
                 this.block_ypos = v.block_ypos;
@@ -156,5 +166,6 @@ jPeaDFBlock.prototype.drawItems = function() {
         this.pdf_obj.ypos = temp_ypos;
         this.pdf_obj.doc.goToPage(temp_page);
     }
-
+    // revert to standard font!
+    this.pdf_obj.doc.setFontSize(this.pdf_obj.options.font_size);
 }
