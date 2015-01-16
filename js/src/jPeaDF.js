@@ -28,8 +28,7 @@ var jPeaDF = function(options) {
     // setup the document
     this.doc = new jsPDF(this.options.orientation, this.options.units, this.options.page_size);// oreintation, inches, unit
     this.doc.setFontSize(this.options.font_size);
-
-
+    
     this.posXStart = this.getSizeByPercentage(this.options.padding_left, this.options.width, 0);
     this.posYStart = this.getSizeByPercentage(this.options.padding_top, this.options.height, 0, 0);
 
@@ -179,6 +178,7 @@ jPeaDF.prototype.getOffsetX = function(outer, inner, align, defaulta, addition, 
 }
 
 jPeaDF.prototype.getOffsetY = function(outer, inner, align, defaulta, addition, padding) {
+    
     if (!align) {
         align = defaulta;
     }
@@ -191,6 +191,19 @@ jPeaDF.prototype.getOffsetY = function(outer, inner, align, defaulta, addition, 
     }
     return addition + padding;
 }
+
+// when using soplit string- make sure PDF Font size is changed
+jPeaDF.prototype.drawSplitText = function(text,font_size,line_spacing,width,height,start_pos_x,start_pos_y,padding, halign, valign,overflow) {
+    var temp_yoffset = this.getOffsetY(height, line_spacing*text.length, null, valign, font_size, [padding[2], padding[3]]);
+    var current_y = 0;
+    for(var i=0; i<text.length; i++){
+        var temp_xoffset = this.getOffsetX(width, this.doc.getStringUnitWidth(text[i])*font_size, null, halign, 0, [padding[0], padding[1]]);
+        // go through each line!
+        this.doc.text(start_pos_x+temp_xoffset, this.ypos + temp_yoffset+current_y+start_pos_y, text[i].toString());
+        current_y += line_spacing;
+    }
+}
+
 
 jPeaDF.prototype.setColor = function(a, defaulta) {
     if (!a) {

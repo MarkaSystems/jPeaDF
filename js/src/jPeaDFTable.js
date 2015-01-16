@@ -15,6 +15,7 @@ var jPeaDFTable = function(h, t, options) {
     this.options.width = 0;
     this.options.id = (options && options.id) || 'Undefinded ID';
     this.options.floating = (options && options.floating) || false;
+    this.options.overflow = (options && options.overflow) || true;
     this.options.widthInitial = (options && options.width) || '100%';
     this.options.margin_left = (options && options.margin_left) || 0;
     this.options.margin_right = (options && options.margin_right) || 0;
@@ -22,13 +23,17 @@ var jPeaDFTable = function(h, t, options) {
     this.options.margin_bottom = (options && options.margin_bottom) || 0;
     this.options.font_color = (options && options.font_color) || [0, 0, 0];
     this.options.font_size = (options && options.font_size) || 8;
-    this.options.cell_padding = (options && options.cell_padding) || 2;
+    this.options.line_spacing = (options && options.line_spacing) || this.options.font_size * 1.2;
+    this.options.cell_padding = (options && options.cell_padding) || 3;
     this.options.cell_header_fill = (options && options.cell_header_fill) || [0, 0, 0, 100];
     this.options.cell_row_fill = (options && options.cell_row_fill) || [0, 0, 0, 0];
     this.options.cell_line = (options && options.cell_line) || [200, 200, 200];
     this.options.header_height = (options && options.header_height) || this.options.font_size * 1.5;
     this.options.row_height = (options && options.row_height) || this.options.font_size * 1.5;
     this.options.line_width = (options && options.line_width) || [.1];
+    this.options.halign = (options && options.halign) || 'c';
+    this.options.valign = (options && options.valign) || 'm';
+    
 
     if (this.debug && this.debug.creation) {
         window.console.log('Creating jPeaDFTable-----------');
@@ -71,9 +76,9 @@ jPeaDFTable.prototype.drawItems = function() {
     var tableRowHeight = this.options.row_height;
     var temp_ypos = 0;
     var temp_page = 0;
-    
-    
-    obj.ypos = obj.ypos+this.options.margin_top;
+
+
+    obj.ypos = obj.ypos + this.options.margin_top;
     if (this.options.floating) {
         temp_ypos = obj.ypos;
         temp_page = obj.doc.getPage();
@@ -98,17 +103,26 @@ jPeaDFTable.prototype.drawItems = function() {
 
     var temp_total_space = tableWidth;
     var temp_total_count = this.headers.length;
-    $.each(this.headers, function(k, v) {// for every cell
+    // here we calculate the width of headers and get the number of lines for headers- since line wraps are required!
+    for (var i = 0; i < this.headers.length; i++) {// for every cell
+        var v = this.headers[i];
+        var temp_cell_width = 20;
         if (v.width) {
-            var temp_cell_width = obj.getSizeByPercentage(v.width, tableWidth, 0);
+            temp_cell_width = obj.getSizeByPercentage(v.width, tableWidth, 0);
             temp_total_space -= temp_cell_width;
             tableColWidths.push(temp_cell_width);
             temp_total_count--;
-        } else {
-            tableColWidths.push(20);// default col width
         }
+        // get colWidths!
+        tableColWidths.push(temp_cell_width);// default col width
+        // split header!
+        var splits = obj.doc.splitTextToSize(v.value.toString(), temp_cell_width - (tableCellPad * 2), {});
+        var overflow = v.style ? (v.style.overflow) : this.options.overflow;
+        v.value = overflow ? splits : [splits[0]];// if there is an overflow
+        temp_tableHeaderHeight = (this.options.line_spacing * v.value.length) + (tableCellPad * 2);
+        tableHeaderHeight = Math.max(temp_tableHeaderHeight, tableHeaderHeight);
+    }
 
-    });
     // now for the remaining
     var temp_remaining = 10;
     try {
@@ -127,42 +141,61 @@ jPeaDFTable.prototype.drawItems = function() {
         obj.goToNextPage();
         obj.ypos = obj.options.padding_top;
     }
-    $.each(this.headers, function(k, v) {
+
+    var temp_tableHeaderHeight = tableHeaderHeight;
+    for (var i = 0; i < this.headers.length; i++) {// for every cell
+        var v = this.headers[i];
         if (v.style) {
             obj.setLineWidth(v.style.line_width, tableLineWidth);
             obj.setFill(v.style.fill, tableCellHeaderFill);
             obj.setLineColor(v.style.line_color, tableCellLine);
             obj.setColor(v.style.color, tableFontColor);
             obj.setStyle(v.style.style);
-            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value.toString()) * scaledFontSize, v.style.halign, 'c', 0, v.style.padding?[v.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
-            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, v.style.valign, 'm', scaledFontSize, v.style.padding?[v.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
+            obj.doc.rect(posXStart + tablePosX, obj.ypos, tableColWidths[i], tableHeaderHeight, 'FD');
+            obj.drawSplitText(v.value, this.options.font_size, this.options.line_spacing, tableColWidths[i], tableHeaderHeight, posXStart + tablePosX,0, [tableCellPad, tableCellPad, tableCellPad, tableCellPad],vcell.style.halign || this.options.halign,vcell.style.valign || this.options.valign, false);
         } else {
             obj.setLineWidth(null, tableLineWidth);
             obj.setFill(null, tableCellHeaderFill);
             obj.setLineColor(null, tableCellLine);
             obj.setColor(null, tableFontColor);
             obj.setStyle(null);
-            temp_xoffset = obj.getOffsetX(tableColWidths[k], obj.doc.getStringUnitWidth(v.value.toString()) * scaledFontSize, null, 'c', 0, [tableCellPad,tableCellPad]);
-            temp_yoffset = obj.getOffsetY(tableHeaderHeight, scaledFontSize, null, 'm', scaledFontSize, [tableCellPad,tableCellPad]);
+            obj.doc.rect(posXStart + tablePosX, obj.ypos, tableColWidths[i], tableHeaderHeight, 'FD');
+            obj.drawSplitText(v.value, this.options.font_size, this.options.line_spacing, tableColWidths[i], tableHeaderHeight, posXStart + tablePosX,0, [tableCellPad, tableCellPad, tableCellPad, tableCellPad],this.options.halign,this.options.valign, false);
         }
-        obj.doc.rect(posXStart + tablePosX, obj.ypos, tableColWidths[k], tableHeaderHeight, 'FD');
-        obj.doc.text(posXStart + tablePosX + temp_xoffset, obj.ypos + temp_yoffset, v.value.toString());
-        tablePosX += tableColWidths[k];
-    });
+        tablePosX += tableColWidths[i];
+    }
     obj.ypos += tableHeaderHeight;
 
     //for rows
     obj.doc.setFontSize(tableFontSize);
     var scaledFontSize = tableFontSize / obj.doc.internal.scaleFactor;
 
-    $.each(this.data, function(krow, vrow) {
+    for (var krow = 0; krow < this.data.length; krow++) {// for every cell
+        var vrow = this.data[krow];
         // if it exceeds page bounds= add for each row
         if (obj.ypos + tableRowHeight > obj.options.height - obj.options.padding_bottom) {
             obj.goToNextPage();
             obj.ypos = obj.options.padding_top;
         }
         tablePosX = 0;
-        $.each(vrow, function(kcell, vcell) {// for every coloum
+
+        // get highest height height
+        var highest_height = 0;
+        var temp_tableCellHeight = 0;
+        for (var kcell = 0; kcell < vrow.length; kcell++) {// for every cell
+            var vcell = vrow[kcell];
+            var colw = tableColWidths[kcell];
+
+            var splits = obj.doc.splitTextToSize(vcell.value.toString(), colw - (tableCellPad * 2), {});
+            // we calculate overflow- if true we split the lines, otherwise we cut the lines on the first 1
+            var overflow = vcell.style ? (vcell.style.overflow) : this.options.overflow;
+            vcell.value = overflow ? splits : [splits[0]];// if there is an overflow
+            temp_tableCellHeight = (this.options.line_spacing * vcell.value.length) + (tableCellPad * 2);
+            highest_height = Math.max(temp_tableCellHeight, highest_height);
+        }
+
+        for (var kcell = 0; kcell < vrow.length; kcell++) {// for every cell
+            var vcell = vrow[kcell];
             var colw = tableColWidths[kcell];
             // individual settings
             if (vcell.style) {
@@ -171,26 +204,24 @@ jPeaDFTable.prototype.drawItems = function() {
                 obj.setLineColor(vcell.style.line_color, tableCellLine);
                 obj.setColor(vcell.style.color, tableFontColor);
                 obj.setStyle(vcell.style.style);
-                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, vcell.style.halign, 'l', 0, vcell.style.padding?[vcell.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
-                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, vcell.style.valign, 'm', scaledFontSize, vcell.style.padding?[vcell.style.padding,v.style.padding]:[tableCellPad,tableCellPad]);
+                obj.doc.rect(posXStart + tablePosX, obj.ypos, colw, highest_height, 'FD');
+                obj.drawSplitText(vcell.value, this.options.font_size, this.options.line_spacing, colw, highest_height, posXStart + tablePosX,0, [tableCellPad, tableCellPad, tableCellPad, tableCellPad],vcell.style.halign || this.options.halign,vcell.style.valign || this.options.valign, false);
             } else {
                 obj.setLineWidth(null, tableLineWidth);
                 obj.setFill(null, tableCellRowFill);
                 obj.setColor(null, tableFontColor);
                 obj.setLineColor(null, tableCellLine);
                 obj.setStyle(null);
-                temp_xoffset = obj.getOffsetX(colw, obj.doc.getStringUnitWidth(vcell.value) * scaledFontSize, null, 'l', 0, [tableCellPad,tableCellPad]);
-                temp_yoffset = obj.getOffsetY(tableRowHeight, scaledFontSize, null, 'm', scaledFontSize, [tableCellPad,tableCellPad]);
+                obj.doc.rect(posXStart + tablePosX, obj.ypos, colw, highest_height, 'FD');
+                obj.drawSplitText(vcell.value, this.options.font_size, this.options.line_spacing, colw, highest_height, posXStart + tablePosX,0, [tableCellPad, tableCellPad, tableCellPad, tableCellPad],this.options.halign,this.options.valign, false);
             }
 
-            obj.doc.rect(posXStart + tablePosX, obj.ypos, colw, tableRowHeight, 'FD');
-            obj.doc.text(posXStart + tablePosX + temp_xoffset, obj.ypos + temp_yoffset, vcell.value.toString());
+            //obj.doc.rect(posXStart + tablePosX, obj.ypos, colw, tableRowHeight, 'FD');
+            //obj.doc.text(posXStart + tablePosX + temp_xoffset, obj.ypos + temp_yoffset, vcell.value.toString());
             tablePosX += colw;
-        });
-
-        obj.ypos += tableRowHeight;
-
-    });
+        }
+        obj.ypos += highest_height;
+    }
 
     this.block_ypos = obj.ypos;
     this.block_ypage = obj.doc.getPage();

@@ -25,6 +25,7 @@ and open the template in the editor.
         <script type="text/javascript" src="js/src/jPeaDFTable.js"></script>
         <script type="text/javascript" src="js/src/jPeaDFMath.js"></script>
         <script type="text/javascript" src="js/src/jPeaDFHeader.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFParagraph.js"></script>
 
     </head>
     <body>
@@ -38,6 +39,7 @@ and open the template in the editor.
                 }
                 var toptions={margin_top: 50};
                 var theaders = [{value: "1 fadhFHFASDJKHFAS78FYHASDUFHASHFJAS hjkf asff ofas fhai y8f d9a a fasd fa fa 61 31", width: 50}, {value: "2", width: 50}, {value: "3"}, {value: "4"}, {value: "5", width: '10%'}]
+                var listdata = [];
                 
                 
                 
@@ -51,8 +53,9 @@ and open the template in the editor.
                     
                     var nb = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_left:'5%', width: '40%', height: 50, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
                     var nb2 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left:'50%', width: '40%', height: 50, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-
+                    nb.addItem(new jPeaDFParagraph("This is a paraphp of llorem ipsum something good and right but wring This is a paraphp of llorem ipsum something good and right but wring",{font_size:8}));
                     bb.addItem(nb);
+                    
                     bb.addItem(nb2);
                     bb.addItem(nb2);
                     bb.addItem(nb);

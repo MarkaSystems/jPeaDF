@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Demo for jPeaDF</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type="text/javascript" src="js/jquery.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/Deflate/adler32cs.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/FileSaver.js/FileSaver.js"></script>
+        <script type="text/javascript" src="js/jsPDF/libs/Blob.js/BlobBuilder.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.addimage.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.standard_fonts_metrics.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.split_text_to_size.js"></script>
+        <script type="text/javascript" src="js/jsPDF/jspdf.plugin.from_html.js"></script>
+        <script type="text/javascript" src="js/jsPDF/table.js"></script>
+
+        <script type="text/javascript" src="js/src/jPeaDF.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFbLOCK.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFTable.js"></script>
+        <script type="text/javascript" src="js/src/jPeaDFMath.js"></script>
+
+    </head>
+    <body>
+        <script>
+            $(function() {
+
+                var doc = new jsPDF('p', 'in', 'letter')
+                        , sizes = [12, 16, 20]
+                        , fonts = [['Times', 'Roman'], ['Helvetica', ''], ['Times', 'Italic']]
+                        , font, size, lines
+                        , margin = 0.5 // inches on a 8.5 x 11 inch sheet.
+                        , verticalOffset = margin
+                        , loremipsum = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus id eros turpis. Vivamus tempor urna vitae sapien mollis molestie. Vestibulum in lectus non enim bibendum laoreet at at libero. Etiam malesuada erat sed sem blandit in varius orci porttitor. Sed at sapien urna. Fusce augue ipsum, molestie et adipiscing at, varius quis enim. Morbi sed magna est, vel vestibulum urna. Sed tempor ipsum vel mi pretium at elementum urna tempor. Nulla faucibus consectetur felis, elementum venenatis mi mollis gravida. Aliquam mi ante, accumsan eu tempus vitae, viverra quis justo.\n\nProin feugiat augue in augue rhoncus eu cursus tellus laoreet. Pellentesque eu sapien at diam porttitor venenatis nec vitae velit. Donec ultrices volutpat lectus eget vehicula. Nam eu erat mi, in pulvinar eros. Mauris viverra porta orci, et vehicula lectus sagittis id. Nullam at magna vitae nunc fringilla posuere. Duis volutpat malesuada ornare. Nulla in eros metus. Vivamus a posuere libero.'
+
+                // Margins:
+                doc.setDrawColor(0, 255, 0)
+                        .setLineWidth(1 / 72)
+                        .line(margin, margin, margin, 11 - margin)
+                        .line(8.5 - margin, margin, 8.5 - margin, 11 - margin)
+                
+                var pdf = new jsPDF('p','in','letter')
+		, largetext_size = 16
+		, smalltext_size = 12
+		//splitStr picks up current font, size
+		, largetext = pdf.setFontSize(largetext_size).splitTextToSize(loremipsum, 7.5)
+		// but allows you to pass in alternative fontName, fontStyle, fontSize
+		// as part of settings Object.
+		, smalltext = pdf.splitTextToSize(loremipsum, 7.5, {'fontSize':smalltext_size})
+
+
+		pdf.text(0.5, 0.5 + largetext_size / 72, largetext)
+
+		var offset = largetext.length * largetext_size / 72 + 2 * smalltext_size / 72
+
+		pdf.setFontSize(smalltext_size).text(0.5, margin + offset, smalltext)
+
+                
+                
+            });
+        </script>
+
+
+
+        <button onclick="createPDF();">Create PDF</button>
+    </body>
+</html>

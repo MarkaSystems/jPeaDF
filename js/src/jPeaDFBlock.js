@@ -62,8 +62,6 @@ jPeaDFBlock.prototype.setPdfObj = function(obj) {
 
 // recursive
 jPeaDFBlock.prototype.drawItems = function() {
-    // add the margin top
-    this.pdf_obj.ypos = this.pdf_obj.ypos + this.options.margin_top;
 
     var temp_ypos = 0;
     var temp_page = 0;
@@ -71,15 +69,17 @@ jPeaDFBlock.prototype.drawItems = function() {
         temp_ypos = this.pdf_obj.ypos;
         temp_page = this.pdf_obj.doc.getPage();
     }
+    // add the margin top
+    this.pdf_obj.ypos = this.pdf_obj.ypos + this.options.margin_top;
+
     // if block will flow to next page!
-    //
     window.console.log('Height initial ' + this.options.heightInitial);
     if (this.pdf_obj.ypos + this.options.height > this.pdf_obj.options.height - this.pdf_obj.options.padding_bottom) {
         this.pdf_obj.goToNextPage();
         this.pdf_obj.ypos = this.pdf_obj.options.padding_top;
     }
 
-    window.console.log('#' + this.options.id + ' Drawing block at ' + this.posXStart + ' , '+ this.pdf_obj.ypos + '  [ ' + this.options.width + ' , ' + this.options.height + ']');
+    window.console.log('#' + this.options.id + ' Drawing block at ' + this.posXStart + ' , ' + this.pdf_obj.ypos + '  [ ' + this.options.width + ' , ' + this.options.height + ']');
     if (this.options.fill_color) {
         this.pdf_obj.setFill(null, this.options.fill_color);
         this.pdf_obj.doc.rect(this.posXStart, this.pdf_obj.ypos, this.options.width, this.options.height, 'F');
@@ -93,9 +93,28 @@ jPeaDFBlock.prototype.drawItems = function() {
 
 
     // draw the block!
-    for (var i = 0; i < this.blocks.length; i++) {
 
+
+
+    for (var i = 0; i < this.blocks.length; i++) {
         var v = this.blocks[i];
+        var temp_ypos_inner = 0;
+        var temp_page_inner = 0;
+        var current_temp_ypos_inner = this.pdf_obj.ypos;
+        var current_temp_page_inner = this.pdf_obj.doc.getPage();
+
+        if (v.options.floating) {
+            temp_ypos_inner = current_temp_ypos_inner;
+            temp_page_inner = current_temp_page_inner;
+        } else {
+            current_temp_ypos_inner = this.pdf_obj.ypos;
+            current_temp_page_inner = this.pdf_obj.doc.getPage();
+
+        }
+
+        // add the margin top
+        this.pdf_obj.ypos = this.pdf_obj.ypos + this.options.margin_top;
+
         v.options.padding_left = this.pdf_obj.getSizeByPercentage(v.options.padding_left, v.options.width, 0);
         v.options.padding_right = this.pdf_obj.getSizeByPercentage(v.options.padding_right, v.options.width, 0);
         v.options.padding_top = this.pdf_obj.getSizeByPercentage(v.options.padding_top, v.options.height, 0);
@@ -122,7 +141,11 @@ jPeaDFBlock.prototype.drawItems = function() {
         v.options.margin_left = this.pdf_obj.getSizeByPercentage(v.options.margin_left, this.options.width, this.options.padding_left + this.options.padding_right);// works out width BEFORE the padding
         v.posXStart = this.posXStart + v.options.margin_left;
         v.posYStart = this.posYStart + v.options.margin_top;
-       
+
+        if (v instanceof jPeaDFList) {
+            v.options.indent = this.pdf_obj.getSizeByPercentage(v.options.indentInitial, this.options.width, this.options.padding_left + this.options.padding_right);// works out width AFTER the padding
+        }
+
 
         if (this.pdf_obj.debug) {
             window.console.log('#' + v.options.id + '  New Margin Child Left Margin: ' + v.options.margin_left);
@@ -135,10 +158,9 @@ jPeaDFBlock.prototype.drawItems = function() {
 
 
         if (v instanceof jPeaDFBlock) {
-            this.pdf_obj.ypos = this.block_ypos;
-            this.pdf_obj.doc.goToPage(this.block_ypage);
+            //this.pdf_obj.ypos = this.block_ypos;
+            //this.pdf_obj.doc.goToPage(this.block_ypage);
             v.drawItems();
-            //this.block_ypos = this.pdf_obj.ypos;
             this.block_ypage = this.pdf_obj.doc.getPage();
             if (v.block_ypage > this.block_ypage) {
                 this.block_ypage = v.block_ypage;
@@ -148,7 +170,6 @@ jPeaDFBlock.prototype.drawItems = function() {
             }
         } else if (v) {
             v.drawItems();
-
             this.block_ypage = this.pdf_obj.doc.getPage();
             if (v.block_ypage > this.block_ypage) {
                 this.block_ypage = v.block_ypage;
@@ -157,9 +178,20 @@ jPeaDFBlock.prototype.drawItems = function() {
                 this.block_ypos = v.block_ypos;
             }
         }
+
+
+        this.pdf_obj.ypos = this.block_ypos;
+        this.pdf_obj.doc.goToPage(this.block_ypage);
+
+        this.block_ypage = this.pdf_obj.doc.getPage();
+        if (v.options.floating) {
+            window.console.log('Floating block ' + v.options.id);
+            this.pdf_obj.ypos = temp_ypos_inner;
+            this.pdf_obj.doc.goToPage(temp_page_inner);
+        }
     }
 
-    //this.block_ypos = this.pdf_obj.ypos;
+    //this.block_ypos = this.pdf_obj.ypos+this.options.height;
     this.block_ypage = this.pdf_obj.doc.getPage();
     if (this.options.floating) {
         window.console.log('Floating block ' + this.options.id);
