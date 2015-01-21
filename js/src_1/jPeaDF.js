@@ -45,55 +45,68 @@ jPeaDF.prototype.addItem = function(b) {
     this.blocks.push(b);
 }
 
-jPeaDF.prototype.calculateSize2 = function() {
-    var float_ypos = this.ypos;
-    var float_ypage = this.getPage();
-    var max_float_ypos = this.ypos;
-    var max_float_ypage = this.getPage();
-
+// recursive call calls each drawItems in the objects
+jPeaDF.prototype.draw = function() {
     for (var i = 0; i < this.blocks.length; i++) {
-        var b = this.blocks[i];
-        
-        // first calculate the size and start/end points of the sub-items
-        b.calculateSize2(this);
-        // floating point checkpoints
-        if (b.options.floating) {
-            float_ypos = b.start_y_pos;
-            float_ypage = b.start_y_page;
-        }
-        
-        // set the floating point END to be the highest in the current block
-        if (b.end_y_page > max_float_ypage ) {
-           max_float_ypage = b.end_y_page ;
-           max_float_ypos = b.end_y_pos + b.options.padding_bottom; // add the padding!
-        } else if (max_float_ypage === b.end_y_page && b.end_y_pos+ b.options.padding_bottom > max_float_ypos) {
-            max_float_ypage = b.end_y_page;
-            max_float_ypos = b.end_y_pos + b.options.padding_bottom;// add the bottom padding
-        }
-        
-        // repoint to start if its floating
-        if (b.options.floating) {
-            // save highest
-            this.goToPage(float_ypage);
-            this.ypos = float_ypos;
-        } else {
-            this.ypos = max_float_ypos;
-            this.goToPage(max_float_ypage);
+        var v = this.blocks[i];
+        // calulate widths of all blocks at this level based on the parent!
+        if (v) {
+            var temp_ypos = 0;
+            var temp_page = 0;
+
+            if (v.options.floating) {
+                temp_ypos = this.ypos;
+                temp_page = this.doc.getPage();
+            }
+
+            // is this requierd????
+            if (this.ypos + v.options.height > this.options.height - this.options.padding_bottom) {
+                this.goToNextPage();
+                this.ypos = this.options.padding_top;
+            }
+
+            v.options.width = this.getSizeByPercentage(v.options.widthInitial, this.options.width, this.options.padding_left + this.options.padding_right);// works out width AFTER the padding
+            v.options.padding_left = this.getSizeByPercentage(v.options.padding_left, v.options.width, 0);
+            v.options.padding_right = this.getSizeByPercentage(v.options.padding_right, v.options.width, 0);
+
+            v.options.height = this.getSizeByPercentage(v.options.heightInitial, this.options.height, this.options.padding_top + this.options.padding_bottom);// works out width AFTER the padding
+            v.options.padding_top = this.getSizeByPercentage(v.options.padding_top, v.options.height, 0);
+            v.options.padding_bottom = this.getSizeByPercentage(v.options.padding_bottom, v.options.height, 0);
+
+            v.options.margin_top = this.getSizeByPercentage(v.options.margin_top, this.options.height, this.options.padding_top + this.options.padding_top);// works out width BEFORE the padding
+            v.options.margin_left = this.getSizeByPercentage(v.options.margin_left, this.options.width, this.options.padding_left + this.options.padding_right);// works out width BEFORE the padding
+            v.posXStart = this.posXStart + v.options.margin_left;
+            v.posYStart = this.posYStart + v.options.margin_top;
+           
+           // calculate then go back to  the start
+            var orig_ypos = this.ypos;
+            var orig_page = this.doc.getPage();
+            v.calculateSize();
+            this.ypos=orig_ypos;
+            this.doc.goToPage(orig_page);
+            
+            
+            v.drawItems();
+            // floating block or non floating
+            // update current position
+
+
+            if (v.block_ypage > this.doc.getPage()) {
+                this.doc.goToPage(v.block_ypage);
+                this.ypos = v.block_ypos;
+            } else if (v.block_ypage == this.doc.getPage() && v.block_ypos > this.ypos) {
+                this.ypos = v.block_ypos;
+            }
+
+            //this.block_ypage = v.block_ypage;
+            if (v.options.floating) {
+                this.ypos = temp_ypos;
+                this.doc.goToPage(temp_page);
+            }
         }
     }
-
-
-
-}
-
-jPeaDF.prototype.draw2 = function() {
-    this.doc.setFontSize(this.options.font_size);
-    this.setColor(this.options.font_color, [0, 0, 0]);
-    // draw all the children items
-    for (var i = 0; i < this.blocks.length; i++) {
-        var b = this.blocks[i];
-        b.draw2();
-    }
+    // finally go the final page
+    this.doc.goToPage(this.doc.getPages().length - 1);
 }
 
 jPeaDF.prototype.setLineWidth = function(a, defaulta) {
@@ -115,15 +128,13 @@ jPeaDF.prototype.getPage = function() {
     return this.doc.getPage();
 }
 
-jPeaDF.prototype.goToPage = function(p) {
-    this.doc.goToPage(p);
-}
-
 jPeaDF.prototype.goToNextPage = function() {
 
     if (this.doc.getPage() < this.doc.getPages().length - 1) {
+        window.console.log('********* Going to page ' + this.doc.getPage() + 1);
         this.doc.goToPage(this.doc.getPage() + 1); // dont add page it already exists
     } else {
+        window.console.log('********* Adding a new page');
         this.doc.addPage();
     }
 }
@@ -183,28 +194,28 @@ jPeaDF.prototype.drawBackgrounds = function(fill, border_width, border_color, st
                 this.doc.rect(x, t_pos, width, this.options.height - this.options.padding_bottom - t_pos, 'F');// tpos will be padding_top if new page!
             }
             if (border_width) {
-                this.setLineWidth(null, border_width ? border_width : 1);
-                this.setLineColor(null, border_color ? border_color : [0, 0, 0]);
-                this.doc.rect(x, t_pos, width, this.options.height - this.options.padding_bottom - t_pos, 'D');// tpos will be padding_top if new page!
+                this.setLineWidth(null, border_width);
+                this.setLineColor(null, border_color);
+                this.doc.rect(x, t_pos, width, this.options.height -  this.options.padding_bottom - t_pos, 'D');// tpos will be padding_top if new page!
             }
             this.goToNextPage();
             t_pos = this.options.padding_top;
-
-
+            
+                
         } else {
             if (fill) {
                 this.setFill(null, fill);
-                this.doc.rect(x, t_pos, width, end_pos - t_pos, 'F');
+                this.doc.rect(x, t_pos, width, end_pos-t_pos, 'F');
             }
             if (border_width) {
-                this.setLineWidth(null, border_width ? border_width : 1);
-                this.setLineColor(null, border_color ? border_color : [0, 0, 0]);
-                this.doc.rect(x, t_pos, width, end_pos - t_pos, 'D');
+                this.setLineWidth(null, border_width);
+                this.setLineColor(null, border_color);
+                this.doc.rect(x, t_pos, width, end_pos-t_pos, 'D');
             }
         }
         t_page++;
     }
-
+    
     this.doc.goToPage(orig_page);
     this.ypos = orig_pos;
 };
@@ -228,12 +239,7 @@ jPeaDF.prototype.setColor = function(a, defaulta) {
 
 jPeaDF.prototype.setFill = function(a, defaulta) {
     if (!a) {
-        if (defaulta.length === 3) {
-            this.doc.setFillColor(defaulta[0], defaulta[1], defaulta[2]);
-        } else if (defaulta.length === 4) {
-            this.doc.setFillColor(defaulta[0], defaulta[1], defaulta[2], defaulta[3]);
-        }
-
+        this.doc.setFillColor(defaulta[0], defaulta[1], defaulta[2], defaulta[3]);
     } else if (a.length === 3) {
         this.doc.setFillColor(a[0], a[1], a[2]);
     } else if (a.length === 4) {

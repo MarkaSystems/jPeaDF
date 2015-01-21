@@ -1,13 +1,36 @@
 var jPeaDFTable = function(h, t, options) {
-    this.data = $.extend(true, [], t);// extended in case the array is used again!
-    this.headers = $.extend(true, [], h);// extended in case the array is used again!
+    this.data = t;
+    this.headers = h;
     this.debug = {creation: false};
     //this.debug = false;
     this.parent = null;
     this.pdf_obj = null;
+    this.block_ypos = 0;
+    this.block_ypage = 0;
+    this.posXStart = 0;
+    this.posyStart = 0;
+
+    this.start_y_pos = 0;
+    this.start_y_page = 0;
+    this.end_y_pos = 0;
+    this.end_y_page = 0;
+    this.total_height = 0;
+
+
 
     this.options = {};
-    createStandardOptions(this, options);
+    this.options.width = 0;
+    this.options.id = (options && options.id) || 'Undefinded ID';
+    this.options.floating = (options && options.floating) || false;
+    this.options.overflow = (options && options.overflow) || true;
+    this.options.widthInitial = (options && options.width) || '100%';
+    this.options.margin_left = (options && options.margin_left) || 0;
+    this.options.margin_right = (options && options.margin_right) || 0;
+    this.options.margin_top = (options && options.margin_top) || 0;
+    this.options.margin_bottom = (options && options.margin_bottom) || 0;
+    this.options.font_color = (options && options.font_color) || [0, 0, 0];
+    this.options.font_size = (options && options.font_size) || 8;
+    this.options.line_spacing = (options && options.line_spacing) || this.options.font_size * 1.2;
     this.options.cell_padding = (options && options.cell_padding) || 3;
     this.options.cell_header_fill = (options && options.cell_header_fill) || [0, 0, 0, 100];
     this.options.cell_row_fill = (options && options.cell_row_fill) || [0, 0, 0, 0];
@@ -30,13 +53,8 @@ jPeaDFTable.prototype.setParent = function(p) {
     this.parent = p;
 }
 
-
-jPeaDFTable.prototype.calculateSize2 = function(parent) {
+jPeaDFTable.prototype.calculateSize = function() {
     var obj = this.pdf_obj;
-    // ****** Updating the position based on the margin//
-    obj.doc.setFontSize(this.options.font_size);// set the font size of this item
-    applyChildSize(parent, this); // this applies the inital widths and heights
-
     obj.ypos = obj.ypos + this.options.margin_top;
     if (obj.ypos > obj.options.height - obj.options.padding_bottom) {
         obj.goToNextPage();
@@ -44,8 +62,12 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
     }
 
 
-    this.start_y_page = obj.doc.getPage();
     this.start_y_pos = obj.ypos;
+    this.start_y_page = obj.doc.getPage();
+
+
+    // calculate widths of table
+    this.options.width = this.pdf_obj.getSizeByPercentage(this.options.width, obj.options.width, obj.options.padding_left + obj.options.padding_right);
 
     //for header
     obj.doc.setFontSize(this.options.font_size);
@@ -80,8 +102,6 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
     } catch (e) {
         // do nothing 
     }
-    
-    // give every column that doesnt have a specified initial width/percentage to equally sahre the remainder of the available width
     for (var i = 0; i < this.headers.length; i++) {
         var v = this.headers[i];
         if (!v.width) {
@@ -89,22 +109,21 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
         }
     }
 
-    // add the header!-> go to next page if the header is too large
+    // add the header!
     if (obj.ypos + this.options.header_height > obj.options.height - obj.options.padding_bottom) {
         obj.goToNextPage();
         obj.ypos = obj.options.padding_top;
     }
-    
     // update this since we dont want extra stuff here
     this.start_y_pos = obj.ypos;
     this.start_y_page = obj.doc.getPage();
     this.total_height += this.options.header_height;
-    obj.ypos += this.options.margin_top; // update the position of the pointer
+    obj.ypos += this.options.margin_top;
     obj.ypos += this.options.header_height;
 
 
     // now work out widths and heights of remainder of table
-    for (var krow = 0; krow < this.data.length; krow++) {// for every row
+    for (var krow = 0; krow < this.data.length; krow++) {// for every cell
         var vrow = this.data[krow];
         // get highest height height
         var highest_height = 0;
@@ -112,7 +131,7 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
 
         for (var kcell = 0; kcell < vrow.length; kcell++) {// for every cell
             var vcell = vrow[kcell];
-            var colw = this.options.col_widths[kcell];// col width required when working out line wrap!
+            var colw = this.options.col_widths[kcell];
 
             var splits = obj.doc.splitTextToSize(vcell.value.toString(), colw - (this.options.cell_padding * 2), {});
             // we calculate overflow- if true we split the lines, otherwise we cut the lines on the first 1
@@ -121,7 +140,7 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
             temp_tableCellHeight = (this.options.line_spacing * vcell.value.length) + (this.options.cell_padding * 2);
             highest_height = Math.max(temp_tableCellHeight, highest_height);
         }
-        // if it exceeds page bounds= go to next page...for each row
+        // if it exceeds page bounds= add for each row
         if (obj.ypos + highest_height > obj.options.height - obj.options.padding_bottom) {
             obj.goToNextPage();
             obj.ypos = obj.options.padding_top;
@@ -132,25 +151,41 @@ jPeaDFTable.prototype.calculateSize2 = function(parent) {
 
     this.end_y_pos = obj.ypos;
     this.end_y_page = obj.doc.getPage();
-
+    // revert to original position for the drawing phase!
+    //obj.ypos=this.start_y_pos;
+    //obj.doc.goToPage(this.start_y_page);
 }
 
-jPeaDFTable.prototype.draw2 = function() {
+
+
+jPeaDFTable.prototype.drawItems = function() {
     // the main settongs for the 
     var obj = this.pdf_obj;
-    // go to the starting page of the table!
-    obj.goToPage(this.start_y_page);
-    obj.ypos = this.start_y_pos;
+    obj.ypos = obj.ypos + this.options.margin_top;
+    if (obj.ypos > obj.options.height - obj.options.padding_bottom) {
+        obj.goToNextPage();
+        obj.ypos = obj.options.padding_top;
+    }
+
+
 
     var current_pos_x = 0;
     var temp_ypos = 0;
     var temp_page = 0;
 
+    obj.ypos = obj.ypos + this.options.margin_top;
     if (this.options.floating) {
         temp_ypos = obj.ypos;
         temp_page = obj.doc.getPage();
     }
-    
+    // now workout the table width
+    obj.doc.setFontSize(this.options.font_size);
+    if (obj.ypos + this.options.header_height > obj.options.height - obj.options.padding_bottom) {
+        obj.goToNextPage();
+        obj.ypos = obj.options.padding_top;
+    }
+
+
     for (var i = 0; i < this.headers.length; i++) {// for every cell
         var v = this.headers[i];
         if (v.style) {
@@ -231,4 +266,4 @@ jPeaDFTable.prototype.draw2 = function() {
     }
     // revert to standard font!
     this.pdf_obj.doc.setFontSize(this.pdf_obj.options.font_size);
-}
+};

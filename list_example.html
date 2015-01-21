@@ -32,57 +32,60 @@ and open the template in the editor.
     <body>
         <script>
             $(function() {
+
+
                 var pdf = new jPeaDF();
-                
-                 var d = [];
-                for (var i = 0; i < 5; i++) {
+                var d = [];
+                for (var i = 0; i < 25; i++) {
                     d.push([{value: '1adsda adas dasd daSADAS'}, {value: i, style: {valign: 't', style: 'bold', color: [200, 150, 0]}}, {value: '3a'}, {value: '4a', style: {valign: 'b', halign: 'r'}}, {value: '5a', style: {halign: 'r', fill: [255, 0, 0]}}]);
                 }
-                var toptions={margin_top: 50};
-                var theaders = [{value: "1 fadhFHFASDJKHFAS78FYHASDUFHASHFJAS hjkf asff ofas fhai y8f d9a a fasd fa fa 61 31", width: 50}, {value: "2", width: 50}, {value: "3"}, {value: "4"}, {value: "5", width: '10%'}]
+
+                var toptions = {margin_top: 120};
+                var theaders = [{value: "1 fadhFHFAS DJKHFAS78FYHAS DUFHASHFJAS hjkf asff ofas fhai y8f d9a a fasd fa fa 61 31", width: 50}, {value: "2", width: 50}, {value: "3"}, {value: "4"}, {value: "5", width: '10%'}];
+
+
                 var listdata = [];
-                for (var i = 0; i < 70; i++) {
-                    listdata.push({content:'content is available tio download'+i,abc:1234});
+                for (var i = 0; i < 170; i++) {
+                    listdata.push({content: 'content is available tio download ghju   gdyu' + i, abc: 1234});
                 }
-                
+
                 pdf.addItem(new jPeaDFHeader('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', {height: 100, font_color: [220, 220, 220], fill_color: [100, 60, 120], padding_right: 30}));
                 // Add random blocks!
-                for (var i = 0; i < 5; i++) {
-                    var bb = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, width: '50%', height: 75, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-                    bb.addItem(new jPeaDFHeader('My sub fadhFHFASDJKHFAS78FYHASDUFHASHFJASfadhFHFASDJKHFAS78FYHASDUFHASHFJAS', {type: 'h4', height: 20, halign: 'r', valign: 'm', margin_top: 5, margin_left: '5%', width: '90%', font_color: [220, 220, 220], fill_color: [0, 0, 0, 50]}));
+                for (var i = 0; i < 6; i++) {
+                    var bb = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_top: 10, margin_bottom: 20, width: '30%', height: 105, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    bb.addItem(new jPeaDFHeader('My sub fadhFHFASDJKHFAS78FYHASDUFHASHFJASfadhFHFASDJKHFAS78FYHASDUFHASHFJAS', {type: 'h4', height: 10, halign: 'r', valign: 'm', margin_top: 5, margin_left: '5%', width: '90%', font_color: [220, 220, 220], fill_color: [0, 0, 0, 50]}));
+                    bb.addItem(new jPeaDFHeader('My sub 1fadhFHFASDJKHFAS78FYHASDUFHASHFJASfadhFHFASDJKHFAS78FYHASDUFHASHFJAS', {type: 'h4', height: 10, halign: 'r', valign: 'm', margin_top: 5, margin_left: '5%', width: '90%', font_color: [220, 220, 220], fill_color: [0, 0, 0, 50]}));
+                    bb.addItem(new jPeaDFHeader('My sub 2', {type: 'h4', height: 40, halign: 'r', valign: 'm', margin_top: 5, margin_left: '10%', width: '80%', font_color: [220, 220, 220], fill_color: [10, 100, 0, 50]}));
                     bb.addItem(new jPeaDFHeader('My sub 2', {type: 'h4', height: 40, halign: 'r', valign: 'm', margin_top: 5, margin_left: '10%', width: '80%', font_color: [220, 220, 220], fill_color: [10, 100, 0, 50]}));
                     bb.addItem(new jPeaDFHeader('My sub 2fadhFHFASDJKHFAS78FYHASDUFHASHFJAS', {type: 'h4', height: 40, halign: 'r', valign: 'm', margin_top: 5, margin_left: '10%', width: '80%', font_color: [220, 220, 220], fill_color: [10, 100, 0, 50]}));
-                    
-                    //var nb = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_left:'5%', width: '40%', height: 50, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-                    var nb2 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left:'50%', width: '40%', height: 50, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-                    
-                    //nb.addItem(new jPeaDFParagraph("This is a paraphp of llorem ipsum something good and right but wring This is a paraphp of llorem ipsum something good and right but wring",{font_size:8}));
-                    //bb.addItem(nb);
-                    nb2.addItem(new jPeaDFList(listdata,{type:'numbers', indent:'10%',fill_color:[0,0,0,150], font_size:8, list_gap:5}));
-                    bb.addItem(nb2);
-     
-                    pdf.addItem(bb);
-                    
-                    var bb2 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left:'50%', width: '50%', height: 200, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
-                    bb2.addItem(new jPeaDFTable(theaders, d, toptions));
-                    pdf.addItem(bb2);
-                    
-                    //if (Math.random() > 0.5) {
-                        var r = Math.random();
-                        var ht = 'h1';
-                        if (r > .75) {
-                            ht = 'h4';
-                        } else if (r > .5) {
-                            ht = 'h3';
-                        } else if (r > 0.25) {
-                            ht = 'h2';
-                        }
 
-                        //pdf.addItem(new jPeaDFHeader('My header ' + i + ' ' + ht, {type: ht, height: 50, halign: 'r', valign: 'm', margin_top: 20, font_color: [220, 220, 220], fill_color: [100, 60, 120]}));
-                    //}
+                    //var nb = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_left:'5%', width: '40%', height: 50, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    var nb2 = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_left: '0%', width: '50%', height: 100, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    var nb3 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left: '50%', width: '50%', height: 20, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    var nb4 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left: '0%', width: '50%', height: 30, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+
+//
+                    nb3.addItem(new jPeaDFParagraph("This is a paraphp of llorem ipsum something good and right but wring This is a paraphp of llorem ipsum This is a paraphp of llorem ipsum something good and right but wring This is a paraphp of llorem ipsum This is a paraphp of llorem ipsum something good and right but wring This is a paraphp of llorem ipsum something good and right but wring",{font_size:16}));
+                    //bb.addItem(nb);
+                    bb.addItem(nb2);
+                    bb.addItem(nb3);
+                    bb.addItem(nb4);
+                    pdf.addItem(bb);
+                    var bb2 = new jPeaDFBlock({floating: true, id: 'Rand_block ' + i, margin_left: '30%', width: '30%', height: 20, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    bb2.addItem(new jPeaDFList(listdata, {type: 'numbers', indent: '10%', padding_bottom:10,padding_top:10,fill_color: [0, 0, 0,100], font_size: 8, list_gap: 2}));
+
+                    var bb3 = new jPeaDFBlock({floating: false, id: 'Rand_block ' + i, margin_left: '60%', width: '30%', height: 60, fill_color: [Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1), Math.floor((Math.random() * 200) + 1)]});
+                    bb3.addItem(new jPeaDFTable(theaders, d, toptions));
+                    pdf.addItem(bb2);
+                    pdf.addItem(bb3);
+
                 }
-                pdf.draw();
+
+                pdf.calculateSize2();
+                pdf.draw2();
                 pdf.outputNewTab();
+//                pdf.draw();
+//                pdf.outputNewTab();
             });
 
 

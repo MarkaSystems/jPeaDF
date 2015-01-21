@@ -2,17 +2,49 @@ var jPeaDFList = function(contents, options) {
     this.debug = {creation: false};
     //this.debug = false;
     this.parent = null;
-    this.pdf_obj = null;
+    this.posXStart = 0;
+    this.posYStart = 0;
+    this.block_ypos = 0;
+    this.block_ypage = 0;
+
+    this.start_y_pos = 0;
+    this.start_y_page = 0;
+    this.end_y_pos = 0;
+    this.end_y_page = 0;
+    this.total_height = 0;
+
     this.options = {};
-    createStandardOptions(this, options);
-    this.list_data = $.extend(true, [], contents);
+    this.list_data = contents;
     // the block options
+
+
     this.options.list_type = (options && options.list_type) || 'numeric';
-    this.options.list_char = (options && options.list_char) || '-';
     this.options.halign = (options && options.halign) || 'l';
     this.options.valign = (options && options.valign) || 't';
-    this.options.indentInitial = (options && options.indent) || 10;
+    // styles
+    this.options.font_size = (options && options.font_size) || 12;
+    this.options.line_spacing = (options && options.line_spacing) || this.options.font_size * 1.2;
     this.options.list_gap = (options && options.list_gap) || 0;
+    this.options.font_style = (options && options.font_style) || null;
+    this.options.font_color = (options && options.font_color) || [0, 0, 0];
+
+    this.options.id = (options && options.id) || 'Undefined ID';
+    this.options.indentInitial = (options && options.indent) || 10;
+    this.options.widthInitial = (options && options.width) || '100%';
+    this.options.overflow = (options && options.overflow) || true;
+    this.options.heightInitial = (options && options.height) || this.options.font_size * 1.5;
+    this.options.padding_left = (options && options.padding_left) || 5;
+    this.options.padding_right = (options && options.padding_right) || 5;
+    this.options.padding_top = (options && options.padding_top) || 10;
+    this.options.padding_bottom = (options && options.padding_bottom) || 10;
+    this.options.border_color = (options && options.border_color) || null;
+    this.options.border_width = (options && options.border_width) || 0;
+    this.options.fill_color = (options && options.fill_color) || null;
+    this.options.margin_left = (options && options.margin_left) || 0;
+    this.options.margin_right = (options && options.margin_right) || 0;
+    this.options.margin_top = (options && options.margin_top) || 0;
+    this.options.margin_bottom = (options && options.margin_bottom) || 0;
+
 }
 
 jPeaDFList.prototype.setParent = function(p) {
@@ -23,110 +55,50 @@ jPeaDFList.prototype.setPdfObj = function(obj) {
     this.pdf_obj = obj;
 }
 
-
-jPeaDFList.prototype.calculateSize2 = function(parent) {
+jPeaDFList.prototype.calculateSize = function() {
+    
     var obj = this.pdf_obj;
-    // ****** Updating the position based on the margin//
-    obj.doc.setFontSize(this.options.font_size);// set the font size of this item
-    applyChildSize(parent, this); // this applies the inital widths and heights
-
-// go to next page!
     obj.ypos = obj.ypos + this.options.margin_top;
-    if (obj.ypos > obj.options.height - obj.options.padding_bottom) {
+    if (obj.ypos> obj.options.height - obj.options.padding_bottom) {
         obj.goToNextPage();
         obj.ypos = obj.options.padding_top;
     }
-
+    
     this.start_y_pos = obj.ypos;
     this.start_y_page = obj.doc.getPage();
 
-    // take into account indents!
-    this.options.indent = jPeaDFGetSizeByPercentage(this.options.indentInitial, parent.options.width, parent.options.padding_left + parent.options.padding_right);// works out width AFTER the padding
+    
     var content_width = this.options.width - this.options.padding_left - this.options.padding_right - this.options.indent;
 
-    // add the top padding
-    obj.ypos += this.options.padding_top;
+    obj.doc.setFontSize(this.options.font_size);
+
+
     // the new height after text flow
     for (var i = 0; i < this.list_data.length; i++) {
         var lcontent = this.list_data[i];
-        if(this.options.list_type ==='numeric'){
-            lcontent.bullet = (i+1)+'';
-        }else if(this.options.list_type ==='char'){
-            lcontent.bullet = this.options.list_char;
-        }else if(this.options.list_type ==='value'){
-            lcontent.bullet = lcontent.bullet || '-';
-        }
         var splits = obj.doc.splitTextToSize(lcontent.content.toString(), content_width, {});
         var overflow = this.options ? (this.options.overflow) : true;
         this.list_data[i].content = overflow ? splits : [splits[0]];// if there is an overflow
-        this.list_data[i].height = ((this.options.line_spacing+this.options.font_size) * this.list_data[i].content.length) + this.options.list_gap;
+        this.list_data[i].height = (this.options.line_spacing * this.list_data[i].content.length) + this.options.list_gap;
         if (obj.ypos + lcontent.height > obj.options.height - obj.options.padding_bottom) {
             obj.goToNextPage();
-            obj.ypos = obj.options.padding_top + this.options.padding_top;
+            obj.ypos = obj.options.padding_top;
         }
-        if (i === 0) { // only if its the first row
-            //this.start_y_pos = obj.ypos;
-            //this.start_y_page = obj.doc.getPage();
+        if (i == 0) { // only if its the first row
+            this.start_y_pos = obj.ypos;
+            this.start_y_page = obj.doc.getPage();
         }
         obj.ypos += this.list_data[i].height;
     }
-    obj.ypos += this.options.padding_bottom;// add the top and bottom paddings of the list!
+    obj.ypos += this.options.padding_top+ this.options.padding_bottom;
+    
     this.end_y_pos = obj.ypos;
     this.end_y_page = obj.doc.getPage();
-}
+    // revert to original position for the drawing phase!
+    //obj.ypos = this.start_y_pos;
+    //obj.doc.goToPage(this.start_y_page);
 
-jPeaDFList.prototype.draw2 = function() {
 
-    var obj = this.pdf_obj;
-    obj.setColor(this.options.font_color, [0, 0, 0]);
-    obj.doc.setFontSize(this.options.font_size);
-
-    // go to the starting page of the list!
-    obj.goToPage(this.start_y_page);
-    obj.ypos = this.start_y_pos;
-
-    obj.drawBackgrounds(this.options.fill_color, this.options.border_width, this.options.border_color, this.start_y_page, this.start_y_pos, this.end_y_page, this.end_y_pos, this.total_height, this.posXStart, this.options.width);
-
-    // add the top padding
-    obj.ypos += this.options.padding_top;
-
-    for (var i = 0; i < this.list_data.length; i++) {
-        var lcontent = this.list_data[i];
-        if (obj.ypos + lcontent.height > obj.options.height - obj.options.padding_bottom) {
-            obj.goToNextPage();
-            obj.ypos = obj.options.padding_top + this.options.padding_top;
-        }
-        
-         obj.drawSplitText(
-                [lcontent.bullet],
-                this.options.font_size,
-                this.options.line_spacing,
-                this.options.width,
-                lcontent.height,
-                this.posXStart + this.options.padding_left,
-                0,
-                [this.options.padding_left, this.options.padding_right, 0, 0], // no need for padding top and bottom!
-                this.options.halign,
-                't',
-                false);
-        obj.drawSplitText(
-                lcontent.content,
-                this.options.font_size,
-                this.options.line_spacing,
-                this.options.width,
-                lcontent.height,
-                this.posXStart + this.options.padding_left + this.options.indent,
-                0,
-                [this.options.padding_left, this.options.padding_right, 0, 0], // no need for padding top and bottom!
-                this.options.halign,
-                't',
-                false);
-        obj.ypos += lcontent.height;
-
-    }
-
-    // revert to standard font!
-    this.pdf_obj.doc.setFontSize(this.pdf_obj.options.font_size);
 }
 
 // recursive
@@ -135,11 +107,11 @@ jPeaDFList.prototype.drawItems = function() {
     obj.setColor(this.options.font_color, [0, 0, 0]);
     obj.doc.setFontSize(this.options.font_size);
     obj.ypos = obj.ypos + this.options.margin_top;
-    if (obj.ypos > obj.options.height - obj.options.padding_bottom) {
+    if (obj.ypos> obj.options.height - obj.options.padding_bottom) {
         obj.goToNextPage();
         obj.ypos = obj.options.padding_top;
     }
-
+    
 
     var content_width = this.options.width - this.options.padding_left - this.options.padding_right - this.options.indent;
     // the new height after text flow
